@@ -1,0 +1,117 @@
+<?php
+// Start session
+session_start();
+
+// Check if user is logged in as admin
+if (!isset($_SESSION['username']) || $_SESSION['username'] != 'admin') {
+    // Redirect to login page if not logged in as admin
+    header("Location: login.php");
+    exit();
+}
+
+// Include database connection
+include 'db_connection.php';
+
+// Function to delete a user
+function deleteUser($conn, $id) {
+    $sql_delete = "DELETE FROM users WHERE id=$id";
+    if (mysqli_query($conn, $sql_delete)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// Check if delete request is sent
+if (isset($_GET['delete_id'])) {
+    $id = $_GET['delete_id'];
+    if (deleteUser($conn, $id)) {
+        echo "<script>alert('User deleted successfully!');</script>";
+    } else {
+        echo "<script>alert('Error deleting user.');</script>";
+    }
+}
+
+// Retrieve users from the database
+$sql_users = "SELECT id, username, user_type, password FROM users"; // Select the password field
+$result_users = mysqli_query($conn, $sql_users);
+
+// Check for errors
+if (!$result_users) {
+    echo "Error: " . mysqli_error($conn);
+    exit();
+}
+
+// HTML for admin panel
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .admin-panel {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 1100;
+            margin: 0 auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .back-button {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-panel">
+        <h2>Registered Users</h2>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Password</th>
+                <th>User Type</th>
+                <th>Action</th>
+            </tr>
+            <?php
+            // Display users in a table with delete option
+            while ($row = mysqli_fetch_assoc($result_users)) {
+                echo "<tr>";
+                echo "<td>".$row['id']."</td>";
+                echo "<td>".$row['username']."</td>";
+                echo "<td>".$row['password']."</td>"; // Display unhashed password
+                echo "<td>".$row['user_type']."</td>";
+                echo "<td><a href='admin.php?delete_id=".$row['id']."'>Delete</a></td>";
+                echo "</tr>";
+            }
+            ?>
+        </table>
+
+        <div class="back-button">
+            <a href="index.php">Back</a>
+        </div>
+        <a href="logout.php">Logout</a>
+    </div>
+</body>
+</html>
